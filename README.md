@@ -2,7 +2,7 @@
 
 ## 📋 Visão Geral
 
-A camada Service em um projeto C# é responsável por concentrar a lógica de negócio da aplicação. Ela atua como intermediária entre os Controllers (ou a camada de apresentação) e os Repositórios (ou camada de acesso a dados).
+A camada Service em um projeto é responsável por concentrar a lógica de negócio da aplicação. Ela atua como intermediária entre os Controllers (ou a camada de apresentação) e os Repositórios (ou camada de acesso a dados).
 
 Em resumo, suas principais responsabilidades são:
 
