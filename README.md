@@ -1,8 +1,18 @@
-# 🚀 Service Layer - Cache Redis
+# 🚀 Service Layer 
 
 ## 📋 Visão Geral
 
-O projeto **Service** é responsável por toda a lógica de cache Redis da aplicação. Esta camada implementa o padrão **Service Layer** e encapsula todas as operações relacionadas ao cache, proporcionando uma interface limpa e reutilizável para as outras camadas da aplicação.
+A camada Service em um projeto C# é responsável por concentrar a lógica de negócio da aplicação. Ela atua como intermediária entre os Controllers (ou a camada de apresentação) e os Repositórios (ou camada de acesso a dados).
+
+Em resumo, suas principais responsabilidades são:
+
+Implementar regras de negócio — garantir que as operações sigam as regras e políticas da aplicação.
+
+Orquestrar chamadas entre repositórios e outras dependências.
+
+Validar dados e aplicar lógica de decisão, antes de salvar ou retornar informações.
+
+Manter o controller limpo, deixando-o responsável apenas por receber requisições e devolver respostas.
 
 ## 🏗️ Arquitetura
 
