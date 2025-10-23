@@ -460,9 +460,230 @@ O **Service Layer** é uma peça fundamental da arquitetura, proporcionando:
 - ✅ **Manutenibilidade** com código organizado
 - ✅ **Performance** com conexões otimizadas
 
-Esta implementação segue as melhores práticas de desenvolvimento e pode ser facilmente estendida para atender necessidades futuras.
+# Exercício: Serviço de CEP com Via CEP
+
+## Descrição do Exercício
+
+**Valor:** 1 ponto na NAC 2  
+**Prazo:** Entregar até a próxima aula  
+**Objetivo:** Implementar um serviço completo de CEP que consome a API do Via CEP e persiste os dados no banco.
 
 ---
 
-*Desenvolvido para demonstrar boas práticas de arquitetura em .NET* 🚀
+##  O que você precisa implementar
+
+### 1. **Entidade CEP (Domain)**
+Criar uma classe `Cep` com as seguintes propriedades:
+- `Id` (int)
+- `Cep` (string) - O CEP informado pelo usuário
+- `Logradouro` (string) - Rua/Avenida
+- `Complemento` (string) - Complemento do endereço
+- `Bairro` (string) - Bairro
+- `Localidade` (string) - Cidade
+- `Uf` (string) - Estado
+- `Ibge` (string) - Código IBGE
+- `Gia` (string) - Código GIA
+- `Ddd` (string) - DDD
+- `Siafi` (string) - Código SIAFI
+- `DataConsulta` (DateTime) - Data/hora da consulta
+
+### 2. **Repositório CEP (Repository)**
+Criar interface `ICepRepository` e implementação `CepRepository` com métodos:
+- `AddCepAsync(Cep cep)` - Inserir CEP no banco
+- `GetAllCepsAsync()` - Buscar todos os CEPs salvos
+- `GetCepByCodeAsync(string cep)` - Buscar CEP específico
+
+### 3. **Serviço CEP (Service)**
+Criar interface `ICepService` e implementação `CepService` com métodos:
+- `ConsultarCepAsync(string cep)` - Consultar Via CEP e salvar no banco
+- `GetAllCepsAsync()` - Buscar todos os CEPs salvos
+
+### 4. **Controller CEP (API)**
+Criar `CepController` com endpoints:
+- `POST /api/cep` - Inserir CEP (recebe apenas o CEP)
+- `GET /api/cep` - Listar todos os CEPs salvos
+
+---
+
+## Código de Exemplo - Consumo Via CEP
+
+### **Classe para resposta do Via CEP:**
+```csharp
+public class ViaCepResponse
+{
+    public string Cep { get; set; }
+    public string Logradouro { get; set; }
+    public string Complemento { get; set; }
+    public string Bairro { get; set; }
+    public string Localidade { get; set; }
+    public string Uf { get; set; }
+    public string Ibge { get; set; }
+    public string Gia { get; set; }
+    public string Ddd { get; set; }
+    public string Siafi { get; set; }
+    public bool Erro { get; set; }
+}
+```
+
+### **Método para consumir Via CEP:**
+```csharp
+public async Task<ViaCepResponse> ConsultarViaCepAsync(string cep)
+{
+    using var httpClient = new HttpClient();
+    
+    // Remove formatação do CEP (tira hífens e espaços)
+    var cepLimpo = cep.Replace("-", "").Replace(" ", "");
+    
+    var url = $"https://viacep.com.br/ws/{cepLimpo}/json/";
+    
+    try
+    {
+        var response = await httpClient.GetAsync(url);
+        response.EnsureSuccessStatusCode();
+        
+        var json = await response.Content.ReadAsStringAsync();
+        var viaCepResponse = JsonSerializer.Deserialize<ViaCepResponse>(json);
+        
+        if (viaCepResponse.Erro)
+        {
+            throw new ArgumentException("CEP não encontrado");
+        }
+        
+        return viaCepResponse;
+    }
+    catch (HttpRequestException)
+    {
+        throw new Exception("Erro ao consultar Via CEP");
+    }
+}
+```
+
+## Estrutura da Tabela no Banco
+
+```sql
+CREATE TABLE Ceps (
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+    Cep VARCHAR(8) NOT NULL,
+    Logradouro VARCHAR(255),
+    Complemento VARCHAR(255),
+    Bairro VARCHAR(100),
+    Localidade VARCHAR(100),
+    Uf VARCHAR(2),
+    Ibge VARCHAR(10),
+    Gia VARCHAR(10),
+    Ddd VARCHAR(3),
+    Siafi VARCHAR(10),
+    DataConsulta DATETIME NOT NULL,
+    INDEX idx_cep (Cep)
+);
+```
+
+---
+
+## 📝 Exemplo de Uso da API
+
+### **1. Inserir CEP:**
+```http
+POST /api/cep
+Content-Type: application/json
+
+{
+    "cep": "01310-100"
+}
+```
+
+**Resposta:**
+```json
+{
+    "id": 1,
+    "cep": "01310100",
+    "logradouro": "Avenida Paulista",
+    "complemento": "",
+    "bairro": "Bela Vista",
+    "localidade": "São Paulo",
+    "uf": "SP",
+    "ibge": "3550308",
+    "gia": "1004",
+    "ddd": "11",
+    "siafi": "7107",
+    "dataConsulta": "2024-01-15T10:30:00"
+}
+```
+
+### **2. Listar todos os CEPs:**
+```http
+GET /api/cep
+```
+
+**Resposta:**
+```json
+[
+    {
+        "id": 1,
+        "cep": "01310100",
+        "logradouro": "Avenida Paulista",
+        "complemento": "",
+        "bairro": "Bela Vista",
+        "localidade": "São Paulo",
+        "uf": "SP",
+        "ibge": "3550308",
+        "gia": "1004",
+        "ddd": "11",
+        "siafi": "7107",
+        "dataConsulta": "2024-01-15T10:30:00"
+    }
+]
+```
+
+---
+
+## ✅ Critérios de Avaliação
+
+### **Funcionalidade (0.6 pontos):**
+- ✅ CEP é consultado no Via CEP corretamente
+- ✅ Dados são salvos no banco de dados
+- ✅ API retorna lista completa de CEPs
+- ✅ Tratamento de erros (CEP inválido, Via CEP indisponível)
+
+### **Código (0.4 pontos):**
+- ✅ Estrutura em camadas (Domain, Repository, Service, Controller)
+- ✅ Uso correto de async/await
+- ✅ Injeção de dependência
+- ✅ Código limpo e bem organizado
+
+---
+
+## 🔍 Validações Importantes
+
+### **CEP:**
+- Remover formatação (hífens, espaços)
+- Validar se tem 8 dígitos
+- Verificar se é numérico
+
+### **Via CEP:**
+- Verificar se `Erro = true` na resposta
+- Tratar exceções de rede
+- Timeout adequado
+
+### **Banco de Dados:**
+- Evitar duplicatas (mesmo CEP)
+- Data/hora da consulta
+- Campos opcionais podem ser null
+
+---
+
+##  Exemplo de CEPs para Testar
+
+- `01310-100` - Avenida Paulista, São Paulo/SP
+- `20040-020` - Rua Primeiro de Março, Rio de Janeiro/RJ
+- `40070-110` - Rua Chile, Salvador/BA
+- `80020-030` - Rua XV de Novembro, Curitiba/PR
+
+---
+
+**Boa sorte! **
+
+*Lembre-se: O objetivo é aprender a consumir APIs externas e persistir dados. Foque na funcionalidade e no código limpo.*
+
+
 
